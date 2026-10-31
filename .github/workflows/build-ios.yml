@@ -31,7 +31,7 @@ jobs:
           echo "Swift-файлов тестов:    $(find AmyWardrobeTests -name '*.swift' | wc -l)"
 
       - name: Выбор версии Xcode
-        run: scripts/select_xcode.sh
+        run: bash scripts/select_xcode.sh
 
       - name: Установка XcodeGen
         run: |
@@ -45,7 +45,7 @@ jobs:
         run: |
           set -o pipefail
           mkdir -p build
-          UDID="$(scripts/pick_simulator.sh)"
+          UDID="$(bash scripts/pick_simulator.sh)"
           echo "Симулятор: $UDID"
           xcodebuild test \
             -project AmyWardrobe.xcodeproj -scheme AmyWardrobe \
@@ -56,7 +56,7 @@ jobs:
 
       - name: Сборка неподписанного IPA
         id: ipa
-        run: scripts/make_ipa.sh
+        run: bash scripts/make_ipa.sh
 
       - name: Артефакт — IPA
         uses: actions/upload-artifact@v4.6.2
