@@ -39,7 +39,8 @@ docs/                         # SIDELOADLY, VIRTUAL_TRYON, ARCHITECTURE, STATUS
 
 ```bash
 cd AmyWardrobe
-git add -A && git commit -m "Initial commit"      # репозиторий уже инициализирован локально
+git init -b main                                  # безопасно, если .git уже есть в архиве
+git add -A && git commit -m "Initial commit"       # если коммит уже есть — «nothing to commit», это нормально
 # создайте ПУСТОЙ репозиторий на github.com (без README), затем:
 git remote add origin https://github.com/<ваш-логин>/AmyWardrobe.git
 git push -u origin main
