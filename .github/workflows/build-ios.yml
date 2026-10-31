@@ -1,0 +1,78 @@
+name: Build AmyWardrobe IPA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths-ignore: ['docs/**', '**/*.md']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-26
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.2.2
+
+      - name: Проверка исходников
+        run: |
+          set -e
+          test -f project.yml || { echo "::error::project.yml не найден"; exit 1; }
+          test -d AmyWardrobe || { echo "::error::каталог AmyWardrobe не найден"; exit 1; }
+          test -d AmyWardrobeTests || { echo "::error::каталог AmyWardrobeTests не найден"; exit 1; }
+          echo "Swift-файлов приложения: $(find AmyWardrobe -name '*.swift' | wc -l)"
+          echo "Swift-файлов тестов:    $(find AmyWardrobeTests -name '*.swift' | wc -l)"
+
+      - name: Выбор версии Xcode
+        run: scripts/select_xcode.sh
+
+      - name: Установка XcodeGen
+        run: |
+          brew install xcodegen
+          xcodegen --version
+
+      - name: Генерация Xcode-проекта
+        run: xcodegen generate --spec project.yml
+
+      - name: Модульные тесты (симулятор)
+        run: |
+          set -o pipefail
+          mkdir -p build
+          UDID="$(scripts/pick_simulator.sh)"
+          echo "Симулятор: $UDID"
+          xcodebuild test \
+            -project AmyWardrobe.xcodeproj -scheme AmyWardrobe \
+            -destination "id=$UDID" \
+            -resultBundlePath build/TestResults.xcresult \
+            CODE_SIGNING_ALLOWED=NO \
+            2>&1 | tee build/xcodebuild-test.log | tail -n 200
+
+      - name: Сборка неподписанного IPA
+        id: ipa
+        run: scripts/make_ipa.sh
+
+      - name: Артефакт — IPA
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: AmyWardrobe-ipa-build${{ github.run_number }}
+          path: ${{ steps.ipa.outputs.ipa_path }}
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Артефакт — логи и результаты тестов (при ошибке)
+        if: failure()
+        uses: actions/upload-artifact@v4.6.2
+        with:
+          name: diagnostics-build${{ github.run_number }}
+          path: |
+            build/*.log
+            build/TestResults.xcresult
+          if-no-files-found: ignore
+          retention-days: 14

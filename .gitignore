@@ -1,0 +1,19 @@
+# Xcode / генерируется XcodeGen из project.yml
+*.xcodeproj
+*.xcworkspace
+xcuserdata/
+DerivedData/
+build/
+*.xcresult
+.DS_Store
+*.ipa
+*.xcarchive
+# Секреты и личные данные — никогда не коммитим
+*.p12
+*.mobileprovision
+*.cer
+*.pem
+*.key
+.env
+*.amybackup
+AmyWardrobe-Backup-*.zip
